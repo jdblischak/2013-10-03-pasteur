@@ -36,7 +36,7 @@ x<-sapply(chart.info, function(x){plot.info(as.numeric(x[1]),x[2],x[3],x[4],x[5]
 * `git config --global user.email "your email (academic has advantages)"`
 
 ### Step 3: create a new local repo in shell dir:
-```{r echo=FALSE, message=FALSE, warning=FALSE, comment='', background='orange', } 
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment=''} 
 cat("$ git init")
 ```
 
