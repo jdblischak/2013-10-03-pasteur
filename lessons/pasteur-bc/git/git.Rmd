@@ -1,0 +1,80 @@
+Using GIT with GitHub
+======================
+
+Today we will be working with one of the most popular version control systems called [GIT][id_git].
+Like [R][id_r], [GIT][id_git] is free and open source, decreasing the boundaries for global collaborations.
+We'll be operating [GIT][id_git] from Terminal and using [GitHub][id_github] as our remote online repository.
+
+### GIT works in four main layers:
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment='', dpi=200, out.width='504px', out.height='504px'}
+plot.info  <-  function(y, text1, text2, text3, final.arrows) {
+    polygon(c(1,5,5,1), c(y,y,y+1,y+1), col='grey90')
+    text(3,y+0.3,text1,pos=3)
+    arrows(8,y+0.5,6,y+0.5)
+    text(8,y+0.5,text2,pos=4)
+    if(final.arrows) {
+        arrows(3,y-0.1,3,y-0.9, col='red')
+        text(3.5,y-0.5,text3,pos=4,cex=1.1,col='red')
+    }
+}
+
+chart.info  <-  list(c(9,'working directory','just a folder on your computer','$ git add',TRUE), 
+                     c(7,'stage','get files ready to commit','$ git commit',TRUE),
+                     c(5,'local repository','the permanent history of changes','$ git push',TRUE),
+                     c(3,'remote repository','online repository (shared?)','',FALSE))
+
+par(family='Monaco', mar=c(0,0,0,0), cex=0.9)
+plot(0, 0, type='n', xlim=c(0,15), ylim=c(3,10),  ylab='', xlab='', axes=FALSE)
+x<-sapply(chart.info, function(x){plot.info(as.numeric(x[1]),x[2],x[3],x[4],x[5])})
+
+```
+
+### Step 1: create [GitHub][id_github] account
+
+### Step 2: set up global user configurations on Terminal
+* `git config --global user.name "your desired username"`
+* `git config --global user.email "your email (academic has advantages)"`
+
+### Step 3: create a new local repo in shell dir:
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment='', background='orange', } 
+cat("$ git init")
+```
+
+### Step 4: check status of repo:
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment=''} 
+cat("$ git status")
+```
+
+### Step 5: create a new file README.md and add it (stage) to the local repo:
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment=''} 
+cat("$ git add filename\n\n#conversely you can add all files (and deletions) by typing\n$ git add --all")
+```
+
+### Step 6: recheck status
+
+### Step 7: ready to commit the change? 
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment=''} 
+cat("$ git commit -m 'your message here'")
+```
+
+### Step 8: check commit's history:
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment=''} 
+cat("$ git log")
+```
+
+### Step 9: we want you to gather in pairs, one student will be *student A*, and the other *student B*. Let's collaborate with [GitHub][id_github]:
+* student A:
+    * create repo on GitHub
+    * copy and paste last two lines of code from [GitHub][id_github] to add remote/push
+    * look at repo page on [GitHub][id_github]
+    * add person B as a collaborator (settings > collaborators)
+* student B:
+    * clone person A's repo
+    * make a change
+    * add, commit, push
+    * person A:
+    * pull
+
+[id_git]: http://git-scm.com/
+[id_r]: cran.r-project.org/
+[id_github]: https://github.com/
