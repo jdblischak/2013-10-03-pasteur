@@ -223,7 +223,7 @@ tab and click the option <code>Restart R</code>.</p>
 getwd()
 </code></pre>
 
-<pre><code>## [1] &quot;/home/johnubuntu/Dropbox/software_carpentry/2013-09_bootcamp/intro_to_R&quot;
+<pre><code>## [1] &quot;/home/johnubuntu/repos/2013-10-03-pasteur/lessons/pasteur-bc/introduction_to_R&quot;
 </code></pre>
 
 <h3>Exercise: Set the working directory</h3>
@@ -977,7 +977,7 @@ of the available options. Here are some ideas to get you started:</p>
 <ul>
 <li>Change the label of the x-axis</li>
 <li>Change the title</li>
-<li>Color the bars of the histogram</li>
+<li>Color the bars of the histogram (R accepts normal names like &ldquo;red&rdquo; and &ldquo;blue&rdquo;)</li>
 <li>Change the number of breaks</li>
 </ul>
 
@@ -1161,7 +1161,7 @@ that fall within each gene.</p>
 
 <p>Second, we have to convert from Ensembl coordinates, which are 1-based and 
 both start and end coordinats are inclusive, to UCSC coordinates, which are
-0-based and teh end coordinate is exclusive 
+0-based and the end coordinate is exclusive 
 (<a href="http://genome.ucsc.edu/FAQ/FAQtracks#tracks1">details</a>). Thus we need to
 subtract one from our starting positions.</p>
 
@@ -1183,13 +1183,20 @@ subtract one from our starting positions.</p>
 <h3>Exercise</h3>
 
 <p>Instead of searching for ChIP-seq reads across the whole gene body, let&#39;s 
-instead focus just on the transcription start site (TSS). Modify <code>genes_bed</code> so
+instead focus just on the transcription start site (TSS), which corresponds to
+the <code>transcript_start</code> variable*. Modify <code>genes_bed</code> so
 that the intervals are +/- 1000 bp from the TSS, and then write the output to
 a file called <code>x_dev_genes_tss.bed</code> in the directory <code>data</code>.</p>
 
 <pre><code class="r"># Your code here
 
 </code></pre>
+
+<p>*This is technically inacurate. The TSS is the <code>transcript_start</code> only for the
+genes on the plus strand. This would be the transcription end site (TES) for
+genes on the minus strand. We haven&#39;t yet covered the flow control statements
+that you would need to accomplish this task correctly. We can talk between
+sessions if you are curious.</p>
 
 </body>
 
