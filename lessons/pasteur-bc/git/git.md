@@ -1,11 +1,11 @@
-Using GIT with GitHub
+Using Git with GitHub
 ======================
 
 Today we will be working with one of the most popular version control systems called [Git][id_git].
 Like [R][id_r], [Git][id_git] is free and open source, decreasing the boundaries for global collaborations.
 We'll be operating [Git][id_git] from Terminal and using [GitHub][id_github] as our remote online repository.
 
-### GIT works in four main layers:
+### Git works in four main layers:
 <img src="figure/unnamed-chunk-1.png" title="plot of chunk unnamed-chunk-1" alt="plot of chunk unnamed-chunk-1" width="504px" height="504px" />
 
 
@@ -33,7 +33,7 @@ $ git status
 ### Step 5: create a new file README.md and add it (stage) to the local repo:
 
 ```r
-$ git add filename
+$ git add README.md
 
 #conversely you can add all files (and deletions) by typing
 $ git add --all

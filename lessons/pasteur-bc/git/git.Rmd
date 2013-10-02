@@ -1,11 +1,11 @@
-Using GIT with GitHub
+Using Git with GitHub
 ======================
 
 Today we will be working with one of the most popular version control systems called [Git][id_git].
 Like [R][id_r], [Git][id_git] is free and open source, decreasing the boundaries for global collaborations.
 We'll be operating [Git][id_git] from Terminal and using [GitHub][id_github] as our remote online repository.
 
-### GIT works in four main layers:
+### Git works in four main layers:
 ```{r echo=FALSE, message=FALSE, warning=FALSE, comment='', dpi=200, out.width='504px', out.height='504px'}
 plot.info  <-  function(y, text1, text2, text3, final.arrows) {
     polygon(c(1,5,5,1), c(y,y,y+1,y+1), col='grey90')
@@ -48,7 +48,7 @@ $ git status
 
 ### Step 5: create a new file README.md and add it (stage) to the local repo:
 ```{r eval=FALSE}
-$ git add filename
+$ git add README.md
 
 #conversely you can add all files (and deletions) by typing
 $ git add --all
