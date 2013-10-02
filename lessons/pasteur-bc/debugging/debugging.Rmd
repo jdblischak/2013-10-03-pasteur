@@ -1,0 +1,100 @@
+#OK guys, let's start with a very simple function that analyses how many species will survive in a certain place that due to many reasons present an extinction probability of, say, 60%. What this functions does is: (1) it iterates through a vector of species richness, from an initial richness scenario (say, 1000 spp) and then analyes how many species persist at each richness level (1000,999,998...100...until it reaches only 1 species). For each richness level, we want to know how many spcies will survive given that extinction probability. So, for example, in the first loop we start with, say, 1000 species and then for each one of those 1000 species the function will ask whether it is going to die or not. Obviousluy this is a very complicated way of calculating something that would be much simpler in reality, but our aim is to strat with something more laborious and simplify it as we progress. 
+
+
+foo  <-  function(x, prob) { #a function that has an argument 'x' which stands for species richness and the probability 'prob' of extinction
+	y  <-  seq(1,x,length.out=x) #provides a vector that goes from 1 species to 'x' species
+	for(i in 1:x){ #starts the first loop, i.e., each starting richness level
+		loss  <-  0 #creates an empty vector that will accumulate the number of lost species within the starting richness level in the loop
+		for(j in 1:y[i]){ #starts the second loop, in which for each species within the starting richness, the algorithm will calculate whether it is going to disappear or not. 
+			loss  <-  loss + as.integer(runif(1) < prob) # loss adds extinct species if the random generated number is smaller than the probability of extinction 
+		}	
+		if(log(i) >= log(loss)) #this is a conditional statement (quite obvious in reality) asking: IF the logarithm of the starting richness level is greater or equal to the logarithm of losses, then subtract the extinct species from the initial starting richness in level 'i'.
+			y[i]  <-  y[i]-loss
+	}
+	return(y) #finishes the function by returning a vector of remaining species for each starting richness. 
+}
+
+Rprof() #starts profiling the function, now you need to tell R what you want to profile, below:
+tmp  <-  foo(x=10000, prob=0.6) #start with 10000 species and a probability of extinction of 60% - it will take forever, believe me
+Rprof(NULL) #finishes profiling. Remember that is necessary to close the device for this to work
+summaryRprof() #now you ask R for a summary of your function, which will tell you where in your function you're spending more time.
+
+
+#OK we see that we are spending some considerable time in our loops, so let's start to optimize this
+foo2  <-  function(y, prob) { #second function, with a different starting argument 'y', which now is the full vetor, instead of x which was the maximum starting richness level from which was created a vector - this doesn't speed up things but cleans the code.
+	t  <-  unlist(lapply(y, FUN=function(f){sum(runif(f) < prob)})) #now this is crucial. lapply is a more efficient way of doing loops. It applies the function to all elements of a vector at once, in theory speeding up your code. Notice it takes two arguments, your object to which you wan to apply the function, and the function 'FUN' you want to apply to it. What we did here was to create a throw-away function, meaning that we are not naming it and it won't be saved in the R environment memory. If you, for example, type, ls() in your console there won't be any function like the one inside lapply. FUN is the name of the argument in the lapply function, the same way we have 'y' and 'prob' in ours. 
+	#different from our approach above where we were iterating for each species from the starting richness level, now we can generate at once as many random numbers as necessary. So, if the first element of y is, say 100 species, the function within lapply will take 100 as its argument 'f' and generate 'f' (i.e., 100) random numbers and analysing how many of those are smaller than our chosen extinction probability. So this is much faster and more efficient, as we ask just once how many species were lost in each starting level. remeber that lapply returns a list, nut since we want a vector as output we need to wrap that around with the function unlist. type ?lapply for more info 
+	i  <-  log(y) >= log(t) #we now create an object i, which will be a logical vector (i.e., TRUE or FALSE values) telling which values in y are equal or greater than their equivalent values in t, which is our output vector from the lapply. Try comparing two vectors at the same length so you are sure you unsderstand this. create, say, a <- 1:10 and b  <- rbinom(10,11,0.5) and then compare by saying a<b. This operatino will compare the first element in a with the first element in b, and so forth. Try also plaing with vectors of different lenghts to see what happens.
+	if(any(i)) #the function any will check all elements of i and see if there is any TRUE. If there is one TRUE, we will subtract from our initial y richness vector the number of extinct species in t. Same thing we did before.
+		y[i]  <-  y[i]-t[i]
+	y #we don't necessarily need to type return(y) at the end of the function. Whatever is at the last line in the function will be always returned. Use return if you want your function to return a result in the middle of your function, so you can, for example, keep track of your function progress. Remeber never to create an object on your lat line because R won't show you the ouput. you need to type an statemnt OR call an object. If we said on the last line, for example, y = y, the function would not return anything.. if we type, y>t than it would return a logical vector...
+}
+
+Rprof() #same as before, profiling function 2
+tmp2  <-  foo2(10000, prob=0.2)
+Rprof(NULL)
+summaryRprof()
+#can you see any problems? foo2 needs full vectors as inputs - go back and fix the 'y' input to 1:10000
+
+
+#again, we see that the problem is related to the random generated numbers... we will now use an statistical trick as our last step, and we are going to modify the lapply line. Check this out http://en.wikipedia.org/wiki/Binomial_distribution "The Bernoulli distribution is a special case of the binomial distribution, where n = 1. Symbolically, X ~ B(1, p) has the same meaning as X ~ Bern(p). Conversely, any binomial distribution, B(n, p), is the distribution of the sum of n independent Bernoulli trials, Bern(p), each with the same probability p." What does this have to do with our function? Everything! We have been asking here if a certain species was extinct by chance or not given a probability 'prob'.. for each random number between 1 and 0, we ask the question whether it is smaller than our chosen probability. This is a bernoulli trial, since it is one indipendent case of one outcome, TRUE or FALSE. What the informatino above us is telling is that the sum of indipendent Bernoulli trials under a given probability are binomially distributed. so intead of asking for 'f' random numbers as in sum(runif(f) < prob), we can ask for one single random number following a binomial distribution.. here's a proof:
+
+vec  <-  vector(mode='numeric') #creates an empty numberic vector
+for(i in 1:10000){ #let's loop through 10000 numbers
+	vec[i]  <- sum(runif(100) < 0.4) #the vec i will take the sum of 10 bernoulli trials smaller than 0.4
+}
+hist(vec, prob=TRUE) #prob=TRUE for probabilities not counts. Analyses the histogram
+lines(density(vec, adjust=2)) #adds an adjusted density curve to our distribution
+vec2  <-  vec <- rbinom(10000, 100, 0.4) #now let's do the same using a binomial distribution. we are going to ask for a 10000 numbers, each with 100 trials and probability 0.4
+lines(density(vec, adjust=2), lty="dotted", col="red", lwd=3) #overlay the density curve for this new distribution and voilà!
+
+#back to our function, let's incorporate the trick
+foo3  <-  function(y, prob) { # we keep the same arguments as in foo2
+	t  <-  sapply(y, function(f){rbinom(1, f, prob)}) #sapply fundamentally does the same thing as lapply, but it passes the argument simplify=TRUE as default, meaning that it will try to simplify the output making it as similar to the initial input as possible. In our case it will return a vector automatically so we don't need to unlist anything. So now our function will ask for 1 random number with 'f' trials, i.e., trials are repesented by the number of starting species in each element of the vector y. This should run much faster than our previous functions. The rest of our functions remains fundamentally the same. 
+	i  <-  log(y) >= log(t) 
+	if(any(i))
+		y[i]  <-  y[i]-t[i]
+	y
+}
+
+Rprof()#same as before, profiling foo3
+tmp3  <-  foo3(y=1:10000, prob=0.9)
+Rprof(NULL)
+summaryRprof()
+
+#we can also compare their performance directly. Ideally you want to compare using the same length of inputs..
+system.time(foo(x=5000, prob=0.5))
+system.time(foo2(y=1:5000, prob=0.5)) 
+system.time(foo3(y=1:5000, prob=0.5))
+
+
+
+
+
+###Now that we know how to speed up the functions, let's explore the fastest one
+foo3(y=rnorm(1000), prob=0.5)
+#what happened here?
+#Error in if (any(i)) y[i] <- y[i] - t[i] : 
+  #missing value where TRUE/FALSE needed
+#In addition: There were 50 or more warnings (use warnings() to see the first 50)
+#If you type warnings(), it will show 'In rbinom(1, f, prob) : NAs produced
+#We can investigate this further by activating the recovering option
+options(error=recover) #if you want to go back to error messages again just type options(error=stop)
+foo3(y=rnorm(1000), prob=0.5) #type 1 and browse it through. Investigate what elements are found within the function environment by typing ls() - notice that you are now inside the function environment and R ignores objects (e.g., foo1 and foo2) that were created together with foo3 in the global environment. You now have the arguments of your function. So look at them so you can understand what's going on. You will realize that prob and y are correct, but your inside objects t and i returned NA. the reason for that is because we generated random numbers following a normal distribution with default mean of 0 and standard deviation of 1 - in rnorm(1000). This may return negative and non-integer values (mostly likely will actually given the nature of the distribution), and you cannot ask for, say, -0.362 trials in your binomial distribution. This means we need to correct for this in our function by antecipating this sort of problem. See below how it's done 
+
+foo3  <-  function(y, prob) {
+	z  <-  round(y) != y #if you round a rnorm() vector, it will certainly be different from your original vector, in which case we want the functino to stop and tell us what is wrong.
+	if(any(z)) #let's use the any trick here as well
+		stop('y must be an integer vector')
+	t  <-  unlist(lapply(y, function(f){rbinom(1, f, prob)}))
+	i  <-  y <= t 
+	if(any(i))
+		y[i]  <-  log(y[i]*100)
+	y
+}
+#now load the function and try again
+options(error=stop)
+foo3(y=rnorm(1000), prob=0.5)
+foo3(y=rpois(1000, lambda=20), prob=0.5) #it works for the right type of vector!
+
+#adjust warnings length(which(round(y) != y)==TRUE) > 0  | length(y)==1
