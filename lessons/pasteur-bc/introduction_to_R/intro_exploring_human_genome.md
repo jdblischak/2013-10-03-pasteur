@@ -1121,7 +1121,7 @@ on the X chromosome and are labeled "protein_coding."
 
 
 2) Now make `genes_sub` contain only genes who have a GO category with the
-word "development" in it. Recall that the GO column is named "names_1006"
+word "development" in it. Recall that the GO column is named "name_1006"
 and you can search for words in strings using the function `grep`.
 
 
