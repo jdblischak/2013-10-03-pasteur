@@ -1,0 +1,826 @@
+R functions and packages
+========================================================
+
+[John Blischak][jdb]
+
+One of the main lessons that Software Carpentry teaches students is to
+not repeat yourself. In the software development community, this is
+known as the [DRY principle][dry]. Any time you find yourself typing the same
+lines of code over again or copy-pasting chunks of code, you should pause and 
+and consider the structure of the code you are writing. Repeating the code you
+have already written increases the chance that you will introduce errors in your
+script. Furthermore, if for example you want to edit the function of your code,
+you will have to make that change everywhere throughout the script. One way
+to avoid these issues is to write your own custom functions. 
+
+Not only do you want to avoid repeating yourself, you want to avoid repeating
+others. Thus you will want to search around first before writing your own
+solution. There are many functions available in the base R distribution for
+data manipulation, statistics, graphics, etc. Additionally, there are external
+packages you can download from The Comprehensive R Archive Network ([CRAN][])
+and [Bioconductor][].
+
+[jdb]: https://bitbucket.org/jdblischak
+[dry]: https://en.wikipedia.org/wiki/Don%27t_repeat_yourself
+[cran]: http://cran.r-project.org/web/packages/
+[bioconductor]: http://bioconductor.org/packages/release/BiocViews.html#___Software
+
+## Required versus optional arguments
+
+Before we start writing our own functions, we'll take a closer look at the 
+built-in R functions. We have already used them in previous lessons, e.g.
+`read.table`, `plot`, `grep`, etc. A function is called by passing it 
+arguments in parentheses, e.g. `function_name(arg1, arg2)`. Functions can have
+both required and optional arguments. The distinction is that optional arguments
+have default values. Let's explore these concepts with the `mean` function.
+
+
+```r
+mean()
+```
+
+```
+## Error: argument "x" is missing, with no default
+```
+
+
+Since we called the function without specifying any arguments, the `mean`
+function threw an error because it has one required argument, `x`. Let's pass
+a numeric vector to mean.
+
+
+```r
+my_nums <- c(1, -5, -19, NA, 8)
+mean(my_nums)
+```
+
+```
+## [1] NA
+```
+
+
+Unfortunately we received a strange result. One of the elements of the numeric
+vector is `NA`, which is a special term in R for specifying missing data that is
+"**N**ot **A**vailable" (you can learn more with `?NA`). To learn how to fix 
+this issue, we can check the help page (use `?mean` or F1). In the "Arugments"
+section we see that there is an option called `na.rm`, which is a logical
+value for whether to remove `NA` values when calculating the mean. Under the
+"Usage" section we see that it is set to `FALSE` by default. We fix the problem
+by changing the value of the `na.rm` argument.
+
+
+```r
+mean(my_nums, na.rm = TRUE)
+```
+
+```
+## [1] -3.75
+```
+
+
+And that fixed the problem. Note however that the following code does not work.
+
+
+```r
+mean(my_nums, TRUE)
+```
+
+```
+## Error: 'trim' must be numeric of length one
+```
+
+
+That is because R evaluates unnamed arguments from left to right. The option
+`trim` comes before `na.rm`. However, all of the combinations below work.
+
+
+```r
+mean(my_nums, 0, TRUE)
+```
+
+```
+## [1] -3.75
+```
+
+```r
+mean(x = my_nums, trim = 0, na.rm = TRUE)
+```
+
+```
+## [1] -3.75
+```
+
+```r
+mean(trim = 0, my_nums, TRUE)
+```
+
+```
+## [1] -3.75
+```
+
+```r
+mean(na.rm = TRUE, trim = 0, my_nums)
+```
+
+```
+## [1] -3.75
+```
+
+
+Though all of the above technically work, in practice clarity is the most 
+important. In general it is good practice to use position only for the required
+arguments and then specifically name all the optional arguments, as we did in
+`mean(my_nums, na.rm = TRUE)`.
+
+**Exercise:**
+
+The function `rnorm` creates a random sample of numbers from the normal
+distribution. Use `?rnorm` or the F1 key to open the help page for `rnorm`.
+
+Use the required and optional arguments of `rnorm` to complete the following 
+tasks:
++ Create a vector called `norm_0_1` that contains 50 random numbers sampled
+from a normal distribution with mean of 0 and standard deviation of 1.
++ Create a vector called `norm_5_1` that contains 50 random numbers sampled
+from a normal distribution with mean of 5 and standard deviation of 1.
++ Create a vector called `norm_0_3` that contains 50 random numbers sampled
+from a normal distribution with mean of 0 and standard deviation of 3.
++ Create a vector called `norm_10_25` that contains 50 random numbers sampled
+from a normal distribution with mean of 0 and standard deviation of 1.
+
+Use the functions `hist`, `mean`, and `sd` to observe your changes.
+
+
+```r
+# Write your code here
+norm_0_1 <- 
+norm_5_1 <- 
+norm_0_3 <- 
+norm_10_25 <- 
+```
+
+
+## Writing custom functions
+
+While R has many great functions available, there will come a time when you
+need a specific functionality to perform your data analysis. We'll start with
+some trivial examples to illustrate some important features of functions.
+
+We define a function using the following syntax:
+
+
+```r
+func_name <- function(arg1, arg2, arg3 = value, ...) {
+    # Description of function
+    command1
+    command2
+    ...
+    return(value)
+}
+```
+
+
+We create a function with the appropriately named R function called `function`.
+We put the arugments inside of the parentheses immediately following the call
+to `function`. If an argument has a default value we specify it here. The second
+part of the function definition is the actual commands that will be exectuted
+inside the function. After the commands have executed, we use the `return`
+function to return the value. This seems strange at first. You can think of a
+function as an isolated environment from the rest of your code. You pass it
+data, it performs some computations, and then it passes back the result. 
+
+
+```r
+add_one <- function(x) {
+    # Adds one to every element of x.
+    return(x + 1)
+}
+```
+
+
+Let's try it out.
+
+
+```r
+add_one(1:10)
+```
+
+```
+##  [1]  2  3  4  5  6  7  8  9 10 11
+```
+
+
+We passed the numeric vector `1:10` to the function `add_one`. Inside the 
+function, our vector was assigned to the variable `x`. Each element of `x` was
+incremented by one, and then this result was returned by the function. And
+since `x` only existed inside of the function, it no longer exists.
+
+
+```r
+ls("x")
+```
+
+```
+## Error: no item called "x" on the search list
+```
+
+
+Let's make this even clearer by first defining a variable by the same name
+both in the function and outside the function:
+
+
+```r
+y <- 5
+add_one <- function(x) {
+    # Adds one to every element of x.
+    y <- x + 1
+    return(y)
+}
+z <- add_one(18)
+y
+```
+
+```
+## [1] 5
+```
+
+```r
+z
+```
+
+```
+## [1] 19
+```
+
+
+Even though `y` was assigned the value 19 inside the function `add_one`,
+the only information saved from the function call was the value 19. This value
+was stored in the variable `z`, thus `y` still has value 5. To the computer, the
+`y` outside the function and the `y` inside the function are completely
+different variables.
+
+**Exercise:**
+
+Create a function called `add_num`, which adds a specific specific number to the
+vector. It takes two arguments. The first is the numeric vector. The second is
+the number to add to each element of the numeric vector. I've provided the 
+skeleton of the function below. You need to add the arguments and the 
+definition.
+
+
+```r
+add_num <- function() {
+    
+}
+```
+
+
+Check your work:
+
+
+```r
+add_num(1:3, 6) == 7:9
+```
+
+
+The functions we have created so far have been quite simple. However small
+functions can be powerful when combined with the `apply` family functions.
+Furthermore, if we know a function is short and unlikely to be used again, we 
+can pass the function definition directly to `apply`. This is called an
+anonymous function since it was never named.
+
+
+```r
+gene_exp <- matrix(rpois(50, 10), nrow = 10)
+apply(gene_exp, 2, add_one)  # for illustration only, should use `gene_exp + 1`
+```
+
+```
+##       [,1] [,2] [,3] [,4] [,5]
+##  [1,]   12   11   14   16   12
+##  [2,]   14    7   11    8   11
+##  [3,]   15    8   17    7    9
+##  [4,]   13    9   12    6    6
+##  [5,]    8   11    9    9   10
+##  [6,]   11   18   13   13    9
+##  [7,]   11   11   13   11   12
+##  [8,]   13   10   10   11   12
+##  [9,]    7   11   14    4    8
+## [10,]    7    8   10   14   15
+```
+
+```r
+apply(gene_exp, 2, function(x) x/sum(x))
+```
+
+```
+##          [,1]    [,2]    [,3]    [,4]    [,5]
+##  [1,] 0.10891 0.10638 0.11504 0.16854 0.11702
+##  [2,] 0.12871 0.06383 0.08850 0.07865 0.10638
+##  [3,] 0.13861 0.07447 0.14159 0.06742 0.08511
+##  [4,] 0.11881 0.08511 0.09735 0.05618 0.05319
+##  [5,] 0.06931 0.10638 0.07080 0.08989 0.09574
+##  [6,] 0.09901 0.18085 0.10619 0.13483 0.08511
+##  [7,] 0.09901 0.10638 0.10619 0.11236 0.11702
+##  [8,] 0.11881 0.09574 0.07965 0.11236 0.11702
+##  [9,] 0.05941 0.10638 0.11504 0.03371 0.07447
+## [10,] 0.05941 0.07447 0.07965 0.14607 0.14894
+```
+
+
+## RPKM example
+
+Now that we have a basic understanding of writing custom functions, let's create
+a more useful one together. We'll use the matrix I created above, `gene_exp`.
+
+
+```r
+gene_exp
+```
+
+```
+##       [,1] [,2] [,3] [,4] [,5]
+##  [1,]   11   10   13   15   11
+##  [2,]   13    6   10    7   10
+##  [3,]   14    7   16    6    8
+##  [4,]   12    8   11    5    5
+##  [5,]    7   10    8    8    9
+##  [6,]   10   17   12   12    8
+##  [7,]   10   10   12   10   11
+##  [8,]   12    9    9   10   11
+##  [9,]    6   10   13    3    7
+## [10,]    6    7    9   13   14
+```
+
+
+We will use this as a practice dataset to simulate a matrix of read counts
+after an RNA-sequencing experiment. Each row is a gene, each column is a sample,
+and each cell represents the number of sequencing reads for a given gene-sample
+combination. The read counts are a proxy for gene expression level. However, in
+order to make comparisons between samples or between genes, we need to
+standardize the counts. One such standardization is RPKM, which stands for Reads
+Per Kilobase of transcript per Million mapped reads. This metric corrects for
+the fact that longer genes will have more reads than shorter genes, and samples
+with more total reads will have higher counts than samples with fewer mapped
+reads. Here's the definition:
+
+>    RPKM = 10^9 * C / ( N * L )
+>  
+>    where
+>    + C = read count for transcript
+>    + N = total read count
+>    + L = sum of exon lengths in bp
+
+In our example, we already have C, which is the matrix `gene_exp`. Furthermore,
+we can obtain N by summing the columns of `gene_exp`. And we can create L now.
+
+
+```r
+# This code randomly samples a number between 1000 and 10,000 for each row
+# of gene_exp, to simulate the length of each gene.
+set.seed(789)  # ensures that we all get the same set of random numbers
+gene_lengths <- sample(1000:10000, nrow(gene_exp))
+```
+
+
+First, how can we divide each read count in `gene_exp` by the total number of
+reads in each sample?
+
+
+```r
+apply(gene_exp, 2, function(x) x/sum(x))
+```
+
+
+Second, how can we divide each read count in `gene_exp` by the length of each
+gene?
+
+
+```r
+apply(gene_exp, 1, function())
+
+gene_exp / gene_lengths
+```
+
+
+Now let's combine these into a function that we could then reuse again and
+again.
+
+
+```r
+rpkm <- function(counts, lengths) {
+  # Calculates Reads Per Kilobase of transcript per Million mapped reads.
+  #  
+  #  RPKM = 10^9 * C / ( N * L ) where
+  #    C = read count for transcript
+  #    N = total read count
+  #    L = sum of exon lengths in bp
+  #
+  # Args:
+  #   counts: A numeric matrix of read counts where the rows correspond to
+  #           genes and the columns to samples.
+  #   lengths: A numeric vector containing the length of each gene in
+  #           counts in base pairs (bp).
+  #
+  # Returns:
+  #   A numeric matrix of RPKM values.
+  #
+  reads_per_mapped_reads <- apply(counts, 2, function(x) x / sum(x))
+  reads_per_bp_transcript_per_mapped_reads <- reads_per_mapped_reads / 
+                                              lengths
+  rpkm <- 10^9 * reads_per_bp_transcript_per_mapped_reads
+  return(rpkm)
+}
+```
+
+
+Now let's apply it and do a sanity check:
+
+
+```r
+gene_exp_rpkm <- rpkm(gene_exp, gene_lengths)
+gene_exp_rpkm[3, 5] == 10^9 * gene_exp[3, 5]/(colSums(gene_exp)[5] * gene_lengths[3])
+```
+
+
+## Packages
+
+One of the biggest motivations for using R is all the extra packages that are
+available. 
+
+### Installing from Bioconductor repository
+
+Packages for analyzing biological data are stored in the 
+[Bioconductor][bioconductor] repository. Below we will download a package and
+explore some of it's features.
+
+**biomaRt**
+
+The Ensembl data base has a web portal called [BioMart][ensembl] where you can
+download data from their databases. This is extremely useful, but suffers from
+some limitations from the fact that you have to point-and-click in your web
+browser to obtain the specific data you want:
++ If this is something you have to do often, it is extremely tedious to 
+point-and-click each time you need new data.
++ It is hard to reproduce, especially if you are not meticulous about documenting
+the choices you made.
+
+The [Bioconductor][] package [biomaRt][] solves these issue. The package provides
+functions for querying the [BioMart][ensembl] database. This makes it easier to
+submit additional queries and also for others to reproduce your analyses.
+
+[ensembl]: http://ensembl.org/biomart/martview/
+[biomart]: http://bioconductor.org/packages/release/bioc/html/biomaRt.html
+
+Use the following commands to download the package:
+
+
+```r
+source("http://bioconductor.org/biocLite.R")
+biocLite("biomaRt")
+```
+
+
+**Note:** If R asks you if it is OK to create a personal folder, say yes.
+
+We load the package into our R session using the function `library`.
+
+
+```r
+library(biomaRt)
+```
+
+
+To see all the packages you have loaded into an R session, use `search`.
+
+
+```r
+search()
+```
+
+```
+##  [1] ".GlobalEnv"        "package:biomaRt"   "package:knitr"    
+##  [4] "package:stats"     "package:graphics"  "package:grDevices"
+##  [7] "package:utils"     "package:datasets"  "package:methods"  
+## [10] "Autoloads"         "package:base"
+```
+
+
+Not only can the `biomaRt` package be used to query the Ensembl database
+(which is what we will use in this lesson), it offers access to many other
+databases as well. The following command creates a file "available_marts.txt"
+with all the options listed.
+
+
+```r
+write.table(listMarts(), file = "available_marts.txt", sep = "\t",
+            row.names = FALSE,  quote = FALSE)
+```
+
+
+First we need to select the "Mart", ie database, that we want to query.
+
+
+```r
+ensembl <- useMart("ensembl")
+```
+
+
+And within that mart we need to choose the dataset we want to use. For this demo
+we'll use human. To see the other options, you can use the `list
+
+
+```r
+write.table(listDatasets(ensembl), file = "available_ensembl_datasets.txt", 
+            sep = "\t", row.names = FALSE,  quote = FALSE)
+ensembl <- useMart("ensembl", "hsapiens_gene_ensembl")
+```
+
+
+Here's an example of how easy it is to obtain data using the function `getBM`.
+Given a set of Ensembl transcript IDs, let's find out which chromosome they are
+on and what their name is.
+
+
+
+```r
+transcripts <- c("ENST00000373031", "ENST00000002596", "ENST00000253193")
+getBM(attributes = c("ensembl_transcript_id", "uniprot_genename",
+                     "chromosome_name", "transcript_start", "transcript_end"),
+      filters = "ensembl_transcript_id",
+      values = transcripts,
+      mart = ensembl)
+```
+
+```
+##   ensembl_transcript_id uniprot_genename chromosome_name transcript_start
+## 1       ENST00000002596           HS3ST1               4         11394774
+## 2       ENST00000253193             LRP3              19         33685490
+## 3       ENST00000373031             TNMD               X         99839799
+##   transcript_end
+## 1       11431389
+## 2       33698694
+## 3       99854882
+```
+
+
+See the help page for `getBM` for explanations of its arguments. When you first
+start using the `biomaRt` package, the most difficult part is learning the
+names for the data you want, e.g. you have to use the string "chromosome_name" 
+to obtain which chromosome the gene is on (and it can be different for 
+different marts). One way to find what you want is to
+print out available attributes and filters and search them outside of R.
+
+
+```r
+write.table(listAttributes(ensembl), 
+            file = "available_ensembl_human_attributes.txt", 
+            sep = "\t", row.names = FALSE,  quote = FALSE)
+write.table(listFilters(ensembl), file = "available_ensembl_human_filters.txt", 
+            sep = "\t", row.names = FALSE,  quote = FALSE)
+```
+
+
+A faster, more advanced method is to use R functions to search the options.
+
+
+```r
+human_atts <- listAttributes(ensembl)
+# Fina all the available attributes with information on the UTRs
+human_atts[grep("UTR", human_atts$description), ]
+```
+
+```
+##             name  description
+## 145  5_utr_start 5' UTR Start
+## 146    5_utr_end   5' UTR End
+## 147  3_utr_start 3' UTR Start
+## 148    3_utr_end   3' UTR End
+## 1735        5utr       5' UTR
+## 1736        3utr       3' UTR
+## 1754 5_utr_start 5' UTR Start
+## 1755   5_utr_end   5' UTR End
+## 1756 3_utr_start 3' UTR Start
+## 1757   3_utr_end   3' UTR End
+```
+
+
+**Note:** There are multiple entries for each attribute. This is a more 
+complicated aspect of the package that will only affect you once you start
+making more advanced queries. Each dataset is split into multiple pages. Each
+page has some unique attributes, but they also share many as well. This affects
+your queries because in each `getBM` call you can only get attributes that are
+found in the same page. You can see the pages with `attributePages(ensembl)`, 
+and you can see the attributes for only one page using e.g.
+`listAttributes(ensembl, page = "feature_page")`. If this is overly confusing,
+do not worry about it for now.
+
+**Exercise:**
+
+For the Ensembl transcripts in the vector `transcripts`, use the `getBM` 
+function to obtain the description of each transcript as well as its
+percentage GC content.
+
+
+```r
+# Your code here
+
+```
+
+
+We can also obtain the sequence of the transcripts using `getSequence`.
+
+
+```r
+getSequence(id = transcripts, type = "ensembl_transcript_id", seqType = "cdna",
+            mart = ensembl)
+```
+
+```
+##                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              cdna
+## 1 AGAACCTCCCAGCTTCCGGAATAGAGGAGCGGGGCAGAAATATCCTGCTTTTTATTTCAGAGCTGACGTTTGCAATCCTAGTGCACTAGCGGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGCTGAATTTTCCGCGCTCTCCTGGCAAATTGGCGTCCGCTCTCCGACGCTAAACCAAAGGAAAAGGAGTGTTCAATGGCGACAGGGCGCTCTTTGAAGCCGGCTCCTCACGCGGATTCTGGCCCAGGCCGCCGCTCCGGTCCCAGTCCGGCTGCAGAGCGAATTGGAGAGGATGGCACCTCCTGCTTCCCGGGGGGCGGAAGGAGCGCCAGCGCCTAAGGTGGGTCACCTGCCAGGAAGGGAATACGCATGGTGCAGACTCACGTGGGAGGAGCACAGGTCCCGGGTACAAGTGCCGAGCTGGCGACTTAGAGAAGAGGTAGACTCGGGCTCAGACCAAGCAGGCGTAAGGGAGTAGACGGGACGTCCCGTGTTTGCAGTGACGGCGGAGTCACCCATCCCAGCAGCCTCACCTTCTTGGAGCGCTGGTCCCTCCCCTTGGACTGAAACCCCAGGGGCCACCGCACCGGGTGGGCGGGACCGACTACTACCCGACCAGCCGCTGGAGCTGCGTGCCAGGCGGGGCTGTGCGGAGCAGCTGAGCGCAGAGCGGAGCACCAGGCACCTAGCGGGCCGGACTCTGGGCGGCACCCGAGCGGGCCGGGCAGCAGTGGGCGCTCGCGATCCTCCTCTGCCCAACGCGCTCTCCCTCCGGGCCCGGCCTCCTCCGTCCCCTCCTTTTGCTCCCGCTCCTCCTCCCGCTCCTCCCCCTCCTCGGGATTGAGCACCAAAACGCCCGCCTGCAAGGTCCTCTGCGCCCTGGCAGCCAGGAGTCGCCGCCACGACAGCCGGGTCTCAGTGGGTGCCTGCGCCTTCTCCCCGCCCGCCTGCCCCGGGCCATCCAGAAACTTGCTCTACCCGCCGCGGGTGCTCGGCAGTGCTGCCCATGGCCCAGCCTAGGAGCCTATTTAGGGCGCCGGACGGGCTGGACAGAGGCGCGGCTCAGTAATTGAAGGCCTGAAACGCCCATGTGCCACTGACTAGGAGGCTTCCCTGCTGCGGCACTTCATGACCCAGCGGCGCGCGGCCCAGTGAAGCCACCGTGGTGTCCAGCATGGCCGCGCTGCTCCTGGGCGCGGTGCTGCTGGTGGCCCAGCCCCAGCTAGTGCCTTCCCGCCCCGCCGAGCTAGGCCAGCAGGAGCTTCTGCGGAAAGCGGGGACCCTCCAGGATGACGTCCGCGATGGCGTGGCCCCAAACGGCTCTGCCCAGCAGTTGCCGCAGACCATCATCATCGGCGTGCGCAAGGGCGGCACGCGCGCACTGCTGGAGATGCTCAGCCTGCACCCCGACGTGGCGGCCGCGGAGAACGAGGTCCACTTCTTCGACTGGGAGGAGCATTACAGCCACGGCTTGGGCTGGTACCTCAGCCAGATGCCCTTCTCCTGGCCACACCAGCTCACAGTGGAGAAGACCCCCGCGTATTTCACGTCGCCCAAAGTGCCTGAGCGAGTCTACAGCATGAACCCGTCCATCCGGCTGCTGCTCATCCTGCGAGACCCGTCGGAGCGCGTGCTATCTGACTACACCCAAGTGTTCTACAACCACATGCAGAAGCACAAGCCCTACCCGTCCATCGAGGAGTTCCTGGTGCGCGATGGCAGGCTCAATGTGGACTACAAGGCCCTCAACCGCAGCCTCTACCACGTGCACATGCAGAACTGGCTGCGCTTTTTCCCGCTGCGCCACATCCACATTGTGGACGGCGACCGCCTCATCAGGGACCCCTTCCCTGAGATCCAAAAGGTCGAGAGGTTCCTAAAGCTGTCGCCGCAGATCAATGCTTCGAACTTCTACTTTAACAAAACCAAGGGCTTTTACTGCCTGCGGGACAGCGGCCGGGACCGCTGCTTACATGAGTCCAAAGGCCGGGCGCACCCCCAAGTCGATCCCAAACTACTCAATAAACTGCACGAATATTTTCATGAGCCAAATAAGAAGTTCTTCGAGCTTGTTGGCAGAACATTTGACTGGCACTGATTTGCAATAAGCTAAGCTCAGAAACTTTCCTACTGTAAGTTCTGGTGTACATCTGAGGGGAAAAAGAATTTTAAAAAAGCATTTAAGGTATAATTTATTTGTAAAATCCATAAAGTACTTCTGTACAGTATTAGATTCACAATTGCCATATATACTAGTTATATTTTTCTACTTGTTAAATGGAGGGCATTTTGTATTGTTTTTCATGGTTGTTAACATTGTGTAATATGTCTCTATATGAAGGAACTAAACTATTTCACTGAAAAAAAAAAAAAGATTTTTTCTGGAGACGCTATGTTTTTTTGAATATAATTAACTTGCCCCCAACTCAAAATAGCTGTCTGTGTTGCAATCATTGCAAAATCTAAATTCTTTTGTTACTTAAAAAAACATGTTTTTCATGGCTATTACAATCCTCTCTCTCCCCTCTCCTTTCTGCATTGCTCTTTTTAATTTTTAATGTCTCATTGTGATCATCAGATTTATTTTTACTTGGATTGTAAGATTTATCTCCTCGGCGATTCCTTGTCATTTTTGGAGGTCACAGTTTTACTCATTCCCATGTGTAAACTTCAAGTAAACAAAGCAATATTCAGGATGGAGAAGCAGTTAGTGACTGGCTAGAGGTCTCTTGGGATCCATCTTGACCTCAAAGAATATTTGCACATGCTTCTGATCTCAGCAGTTATAATAAAGAGGATTAAACCCTTGGCCTTCAGAATGATCTTGGACCTGGATACTTTGCCCCAGGTGGCAGCTGGCCTCCAGAAAGCCAATTAGAATAGAAAAGAGAAACTGCGAAATCTATGCGTGTCTTCATCCTGTCGGTTCTGTGAAAGGCTGACTAAAAGGGTAGTAGTCTTTTGCTTAGTCTGAAAGTCTGCTTACTTCCTGAAAGACACATTGGCATTATAGACATATATTCCATATGCACTGAGACATAAATATGTGTATGTTTCAAAATCAACTCTAAATTTGGAGTCCTGAATGTGAAAGAAAAAGTAAGTTCCCAAGTGTTGAAGTTAAAAAGAGAAAAGGGCAGAGTTGAAGGTAGCACCTAAGAGAACCACTGTACCTGCCCCCAGAGGAGTGGCTGGAGTTCAGTTTTACTTCTGCCCCTGAGCAGCCAGCTTGTTGGAGATGGTCACATAAACCCTTCTTATCCTCAGTTTTTTCATGCATTCTTCATGCAGTCAGCCTTTTACAGAATTAAACCCATTGGATTTTAATAAAAATAAAACATTCATTACAGTAAAAGAGAAAATACAAACAAGCAAAATAAACCGGCTTCCTGACATGGTTTATACCGCAGGAAAATGACAGAAATGGACGTTATTAATCATCTCCTACACTTAAGAACTCATTGAAATTTCTCCAAGCAACCCCAGGATGCAGATATTATTATGGAAATTTCAAAGAGGAGGAATTAGGCCCAGAGAACATGAGAAACTTGCCCAAGGTCACATTGACTATAAACTCAGGCTTAGAGGCTACTCAGAGCCAAAGCACAGGTTATTTATGTATTTAGTTTTTACCCAACTCTTTCTGAACTCAAAAGGAAAAGCCCAGACTCAGAGCCAGTTCTTCCTGACCTGACTTAACATTTCTTCCCAGGTGCCAAATATCTTCCATCCTAAGAGGTGTGTCCCAGATACAGGAAGGGCAAGAAGAAGCCTGCATTTTTCTCAGCAGTGTTATCAGGGAAGTGAGTCACCTTGGTACGTTTCAGCAGCTCCAGCCTGACCTGACCTTAGCATGGCCTATGCCCCACCCCATATCATGAACAGAGAGCAGAGAGGATGCCTTCCTCTTTAGAATCCATTGAAGTTGTCATTAAGCCATCATCTCCCCCAGAGGAAGTAGCAGAAATATTTACAGCAGGCCCCTGGTGGACATGGTACTTTTCAATAGGCAGAGAGCCTCCCTCTGCAGCACATCGTTGGATCTTGCTTTTACCATACTCCTTGAAGAGCTGAAGAAATAAGAGGGCCCAGCAAGGTTAAGTCAAGTTTCCAAGCCTGTTCAGGAATATGGTGACTGAAAGGAAACTGCAATGAGAGTCTCTGACTGAAGAAGATGCTCTTTGCAAACTGCCTGTAAATTCCTGTCCCCTGACAGGGATGGTCTGGTAGAAGCATGAACTGTGGATGCAAGAGGCAGCGGGGAGGAGTGGAGGAAGACAGGACCAGCACATGGAATATAATCTAGCTGCTGGGACTGGCATAGTCGATGGAGGCGGTGGTCCAGTGTAAAATGATCAGTGAATGTAAATTCAATATGTTTTCATTTGGGGGTGCAGAGTCGTGGCTAAAGGAATGTTCAAATGAGTCTACCATGAGCAAGGGATCAGAGGTCCTAGTGGCACTATCTGTTCATTCATTTTTGGTACAACCCCAGCCAGTCATTGAGAAGGTACACTGTGTAAGAAACCATCACTCCAGACTTACCCAAGGTATTTATTGCTAGATCTCACCAAGCACTGTCAAATTCAAAGGAGGCCCTGTAGTAGACCCTGGGCTGTCCTTACAGGGCCAAAATGCAGTGACTCAGGAGCCTAATAGCACCCGGTCCCTCCAAAACATGCCTTCTACCAATTCCATTAACAGAGACAGGTGTCAGTGGAAGGGGTGGGTCTCCTGTCCAGACCACCCCGGCCCGGGAGCAGCCTGGGGGATCTAGGTGGGTCCTTCCAGAGAGGCAAGTGAGAACAACTGAACCAAGCCTCAGCTATTAGATTTGGAATATTCACACACTTGACACTCCAGAGTCAGAACAGCCCCTTCCCTTTCCCTTCCTCCTGGAATCAGATAGGGTTGAAATCCTTTTAACACCATTTGGTTATCAGCTCACAACCTGAAGGTTTGCAAGTTTAGGAAAAGTGACATGCCTCTGAGCACAGGGTGCTTTACTCCTTCTGTGCTTGGAGGCTTACCCAACTGAAAGGAGATGGAGGGCAGGAGAGGCCGATGCCTAGCGTGCCTGCTGCTTACAGGGGTGGTGTCACAGGTCACCATTATTCATTAAAATTTTACTTTTTTGATCCCCTACCACATGCTCAACATGGTATTGAGTCCTCAAGAATATAAAAAGAAAATACAACAGGAACCAGTAGTCATTAACTGTTTGTTCTGGACTTTAATAAAAGTACAGAGGGTCTTGGAGTACAAAGGCAAAGACATTTAGCTGTGTATAGAATGGGTGGGGGAATGTGTTCCATGGTTTGGCATTCAGTTCAGCAACATTCCTGAGAGAAATCAACTAGCCCCCTTATAGAGAAGAGGAAACTGAGATTTAAAAAGTGGTCCTGGCCGGGTGTAGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCAAGACAGGTGAATCACGAGGTCAGGAGTTCAAGACCAGCCTGACCAACATGGTGAAACCCCATCTCTACTAAAAATACAAAAATGTGCCAGGCATGGTGGCGAGTGCCTGTAATCCCAGCTACTCAGGACACTGAGGCAAGAGAACCACTTGAACCTGGCAGGTGGAGGTTGCAGGGGGCCGAGATGATGCCACTGCACTCCAGCCTGGGCAACAGAGCAAGACTCCATCTCAAAAAAAAAAAAAAAAAAAAAAGATAAATTAATAATAAAAAAATAAAAAAGTAATCCTGACTTCAAGTCATTTTTTTCAGAAGAAAGGATTCTTGCTCACTCCAGGGAAATAGTCCAGAAATGGAAAATGTTGACATCACAAATCACAAAAGAAGGTGAAAAATATCAGAGACCCTCTCCAGAATGTCATTTCTCAGAAATATTAAGAAATAGAGAATCTTCCCAGAGGTCGCATGTCAGGGCAGGTCACTTAACTTGTGGGCCACAGAGACCCTGACCTTCCTGTGGGAAGGCTTCATGGAGGAATTGCCATAAAGCTGGGGCACGCACGAATGGCAGTAGTGTCACCAGAGCAGGGCATTCTGAACAAGGGAAGCTTGAGACATGAAGACAGTGGTCACGGGGAGAGGCTGGGGGTAGAGGGTAGAGGTAGGCAAGAGATTTGTCTGAGTGGCATGTCAAATGTGTTAAACTCAATGAGAAGCTACTGCTTTCCAAGGCTGGAGTGTTGGAAGCTTACTTAGCAGGCACCCATGTGAATTTGGCTCCTGTGCAGGTGTATCTGTTGCATAAAAATAGCTATCATTTGTTGCACACCTGCCATGTGCTTGGTATTTTAAATATATTGCTTCTAACCTATATAACAACCCTAGGAAGTAGAAAATGGGCTACTAATTTTACAGAAAAATAAACTCAGAAATTAAAGGGCTTGCCCATGTTGATAGAGCCATTACTTCTTACAAATGAAATTTTGTCTCCGATGTCTCTGCTCCTTTTCAGTCCATCTATTTGTGGGTAAGTGGAGGAAGATATAAAGCATATGCATCTGTCTATTAGGCAGAGCCTGTAAGGGAAATTATGGGCATCTAGGATTTGGAGTTGGACAGTTAGGGTGATATCAAGATTACCTTCAAGCAAAGCAGTGGCTGGGATTTGATGCAACAGGGACGTGATAAAACATGCTCCTAACCGGCAGCAGCTCATTTCGGAAGACTGAGCCTGAGTTAAAGGCCAGAGCAACATAACAGAGTTCTCCAAACAGCACACAGTGAGAGAAGGCCAAAGCTAAAGAGGACATCATCGGATTTAGCTGCTTCACTAAAGTGTTTTGATGTAGAAAATGACCTTGGTGCTTTAGTTATCCCTGATGTCAAGACCTTTACTCTATTTTGCCCAAATTTCTCAGTTAGATAACAGCAAAGAGAGAGAGCCAGAAGACCTGGGTGTGCATCCTAGCTGTACCAATCACTGACCATGGGATCTTAGATTCAGACTCTGAGAACCTCCATTTCCTTCTCCATAAAAATGGGCAGATATGTACTGTACTCTGTTGGGGGAAAACTCCAACTCAATGAGATAAAGTAGGTAAAAACTATAAACCCAGTGCATATGTTACTTAGTGGTTAAAAACATTTGGGACTTTAGGAGACAGACCAAAACTGGTTTTGAACCAGTCGGCAGAAATGCGCTGCCTTTTTTCCTCCTCTGCTTCCCAGCTATGTGACTGTAGCTATTGCTGTTAATGCTCCATCCAGAGCTCATTTACCAGGGAAGTGCTCTCAACCCCAGCTGCCACAAAGATTGTCTTCTGTACTATTTTCTGAAGGATTTCTCTTAGTTGGCAGGAGTTTTCTTACCTGAAGATGCCTGAGAAATGTTGTCCACCCCACTCCCCTGCTTTCCTAGGGTTAGGGCATGACTAATGATTGACTGACCCATGTGGGATGGGGCATGGGGGTAGTAGGGTAACAGTCCACCCTCATTGCCTCCAGGCAGGACAACCTCTGGTGCAACTCATGCTCAGAGCTCCTCGTGAGATCAGGCTGAGGCTAGACTTCTCCTGAAACTGTACTTTTACTTATTTCTTCCGAAACTTCATCCTTTTCCCACATTACCTTACTCATTTCTTCTGCTACCCTATTCTCAGTAAATGTGTTTCCCAAGAAAACAGGAATCCCCCCTCAGACTTTGCTTCTAGACCATCCACTCTAAAGTCTTAACCTTGCATGCATGTTTTCTTCTCTCTGTATTTTACATGTATAACGTGATCAACCCACGGAGTTATTAGAATTCTTCCAATTAAATGAGATATAGCAGAGAATGAGTCTATTTTATTGGCTAGCAAATAGCAAAGTGTTAAATTCAATAATGGCTGAAATTGTTACCAAGTAGTAGGCTCTTTTATTAGCTTATCGGACTACCAAAATAGTATAATGCATCAATATCAAACTTAAATTTCAACTTCATAAAACAATTCTGGGCCCAACAAATATGAAGGTATTGCTCCATCTTATGTAGCAACATCTTGTATTTCTATTGTTTGATAAATATTCCACTTAGAACTAA
+## 2                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        TACGGGCCTGCACCGCCACCGCACAAAGACGCCTCGGGAGCCGCCGCCTGCACCCGGGCCGCAGCAGCCACGCCAGCCGGAGCCCGAGCCCTAGCCCGAGCCCGAGCCCGAGCCGCAGCCAGAGCCAGAGCCGGAGCCGCAGCCGGAACCGGAGCCGGAGCCGCGGGGCAGGAGGCGGCGCCCGCGGGCGGCCGGGCCCGGCATGGAGAAGCGCGCGGCCGCGGGGCTGGAGGGCGCGCCGGGCGCCCGGGCGCAGCTGGCCGTCGTCTGTCTGGTGAACATCTTTCTCACCGGGAGACTCAGCAGTGCGGTTCCTGCCTTAGCGGCCTGCAGTGGGAAGCTGGAGCAGCACACGGAGCGGCGTGGGGTCATCTACAGCCCGGCCTGGCCCCTCAACTACCCGCCAGGCACCAACTGCAGCTGGTACATCCAGGGCGACCGTGGTGACATGATTACCATCAGCTTCCGCAACTTTGACGTGGAGGAGTCCCACCAGTGCTCCCTGGACTGGCTCCTGCTGGGCCCAGCAGCCCCACCCCGCCAGGAGGCCTTCCGCCTCTGTGGCTCCGCCATCCCACCTGCCTTCATCTCTGCCCGCGACCATGTCTGGATTTTCTTCCACTCAGACGCCTCCAGCTCCGGCCAGGCCCAGGGCTTCCGTCTGTCTTACATCCGAGGGAAGCTGGGCCAGGCATCCTGCCAGGCAGATGAGTTCCGCTGTGACAACGGCAAGTGCCTGCCCGGCCCGTGGCAGTGCAACACGGTGGACGAGTGTGGAGACGGCTCTGATGAGGGCAACTGCTCGGCGCCCGCCTCCGAGCCTCCAGGCAGCCTGTGCCCCGGGGGGACCTTCCCATGCAGCGGGGCGCGCTCCACGCGCTGCCTGCCTGTGGAGCGGCGCTGTGACGGCTTGCAGGACTGCGGCGACGGCTCGGATGAGGCGGGCTGCCCCGACCTGGCGTGCGGCCGGCGGCTGGGCAGCTTCTACGGCTCCTTTGCCTCCCCAGACCTGTTCGGCGCCGCTCGCGGGCCCTCAGACCTTCACTGCACGTGGCTGGTGGACACACAGGACTCCCGGCGGGTGCTGCTGCAGCTGGAACTGCGGCTGGGCTATGACGACTACGTGCAGGTATACGAGGGCCTGGGCGAGCGCGGGGACCGCCTGCTGCAGACGCTGTCCTACCGCAGCAACCACCGGCCCGTGAGCCTGGAGGCCGCCCAGGGCCGCCTCACTGTGGCCTACCACGCGCGCGCCCGCAGCGCCGGCCACGGCTTCAATGCCACCTACCAGGTGAAGGGCTATTGCCTCCCCTGGGAGCAGCCGTGCGGGAGCAGTAGTGACAGTGACGGGGGCAGCCTGGGCGACCAGGGCTGCTTCTCAGAGCCACAGCGCTGTGATGGCTGGTGGCATTGTGCCAGCGGCCGAGACGAGCAGGGCTGCCCTGCCTGCCCGCCCGACCAGTACCCCTGCGAGGGTGGCAGTGGTCTGTGCTACACGCCTGCCGACCGCTGCAACAACCAGAAAAGCTGTCCCGACGGCGCCGACGAGAAGAACTGCTTCTCCTGCCAGCCCGGCACCTTCCACTGCGGTACCAACCTGTGCATCTTCGAGACGTGGCGCTGTGACGGCCAGGAAGACTGCCAGGACGGCAGCGATGAGCATGGGTGCCTGGCCGCCGTGCCCCGCAAGGTCATCACGGCGGCGCTCATTGGCAGCCTGGTGTGTGGCCTGCTGCTGGTCATCGCGCTGGGCTGCGCCTTCAAGCTCTACTCACTGCGCACGCAGGAATACAGGGCCTTCGAGACCCAGATGACGCGCCTGGAGGCTGAGTTCGTGCGGCGGGAGGCACCCCCATCCTATGGTCAGCTCATCGCCCAGGGCCTCATTCCACCCGTGGAGGACTTTCCTGTCTACAGTGCGTCCCAGGCCTCTGTGCTGCAGAATCTTCGCACAGCCATGCGGAGACAGATGCGTCGGCACGCCTCCCGCCGGGGGCCCTCCCGCCGCCGCCTCGGCCGCCTCTGGAACCGGCTCTTTCACCGGCCGCGGGCGCCCCGAGGCCAGATCCCACTGCTGACCGCAGCACGCCCCTCACAGACCGTGCTGGGCGATGGCTTCCTCCAGCCTGCTCCAGGGGCTGCCCCCGACCCCCCAGCACCGCTCATGGACACAGGCAGCACCAGGGCGGCCGGAGACAGGCCCCCCAGTGCCCCCGGCCGTGCACCGGAGGTGGGACCTTCAGGGCCACCCTTGCCCTCGGGCCTGCGAGACCCAGAGTGCAGGCCCGTGGACAAGGACAGAAAGGTCTGCAGGGAGCCACTGGTAGACGGCCCAGCTCCTGCAGATGCACCTCGGGAGCCCTGCTCAGCCCAGGACCCGCACCCCCAGGTCTCCACTGCCAGCAGCACCCTGGGCCCCCACTCGCCAGAGCCACTGGGGGTCTGCAGGAACCCCCCGCCCCCCTGCTCCCCAATGCTGGAGGCCAGCGATGATGAGGCCCTGTTGGTCTGTTGACCGCTGGGCTCGCTGGTGACCGCCACAGCCCCGCTTTGTAACCAGGGAATACACAGTCATTTCTACCCTGCCTCTGCGTCCTTTCTTATGGAGAGGCCCTCCGGGGACCCCAGCGGAGGGGCTGGCCCCTAAGCCAGCTGGCTGCACTGGTGGGCGGGAGCTGTGGGACTGAACGGCGGGGGGGAGAAGAGTGGAGTGGTGAGCCCGTCTGCA
+## 3                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     TGTGCACAGAAGTTATATACATATATGGGTATATCTATGTAACAAATCGCAGCACAGGAGTCCCCTGGGCTCCCTCAGGCTCTGGTATGACATATTTGAGCCATATAAATTCAGCTTCTCCTCTGGCATCTGTTAGCCGACTCACTTGCAACTCCACCTCAGCAGTGGTCTCTCAGTCCTCTCAAAGCAAGGAAAGAGTACTGTGTGCTGAGAGACCATGGCAAAGAATCCTCCAGAGAATTGTGAAGACTGTCACATTCTAAATGCAGAAGCTTTTAAATCCAAGAAAATATGTAAATCACTTAAGATTTGTGGACTGGTGTTTGGTATCCTGGCCCTAACTCTAATTGTCCTGTTTTGGGGGAGCAAGCACTTCTGGCCGGAGGTACCCAAAAAAGCCTATGACATGGAGCACACTTTCTACAGCAATGGAGAGAAGAAGAAGATTTACATGGAAATTGATCCTGTGACCAGAACTGAAATATTCAGAAGCGGAAATGGCACTGATGAAACATTGGAAGTGCACGACTTTAAAAACGGATACACTGGCATCTACTTCGTGGGTCTTCAAAAATGTTTTATCAAAACTCAGATTAAAGTGATTCCTGAATTTTCTGAACCAGAAGAGGAAATAGATGAGAATGAAGAAATTACCACAACTTTCTTTGAACAGTCAGTGATTTGGGTCCCAGCAGAAAAGCCTATTGAAAACCGAGATTTTCTTAAAAATTCCAAAATTCTGGAGATTTGTGATAACGTGACCATGTATTGGATCAATCCCACTCTAATATCAGTTTCTGAGTTACAAGACTTTGAGGAGGAGGGAGAAGATCTTCACTTTCCTGCCAACGAAAAAAAAGGGATTGAACAAAATGAACAGTGGGTGGTCCCTCAAGTGAAAGTAGAGAAGACCCGTCACGCCAGACAAGCAAGTGAGGAAGAACTTCCAATAAATGACTATACTGAAAATGGAATAGAATTTGATCCCATGCTGGATGAGAGAGGTTATTGTTGTATTTACTGCCGTCGAGGCAACCGCTATTGCCGCCGCGTCTGTGAACCTTTACTAGGCTACTACCCATATCCATACTGCTACCAAGGAGGACGAGTCATCTGTCGTGTCATCATGCCTTGTAACTGGTGGGTGGCCCGCATGCTGGGGAGGGTCTAATAGGAGGTTTGAGCTCAAATGCTTAAACTGCTGGCAACATATAATAAATGCATGCTATTCAATGAATTTCTGCCTATGAGGCATCTGGCCCCTGGTAGCCAGCTCTCCAGAATTACTTGTAGGTAATTCCTCTCTTCATGTTCTAATAAACTTCTACATTATCACCAA
+##   ensembl_transcript_id
+## 1       ENST00000002596
+## 2       ENST00000253193
+## 3       ENST00000373031
+```
+
+
+**Exercise:**
+
+Use the `getSequence` command to obtain the protein sequences for the
+transcripts:
+
+
+```r
+# Your code here
+
+```
+
+
+As a final example, let's find all the SNPs (Single Nucleotide Polymorhisms) in
+the first kilobase of the first transcript (for the sake of time).
+
+
+```r
+transcript_data <- getBM(attributes = c("chromosome_name", "transcript_start",
+                                        "transcript_end"),
+                         filters = "ensembl_transcript_id",
+                         values = transcripts[1],
+                         mart = ensembl)
+# Create a new Mart to obtain SNP data
+snpmart <- useMart("snp", dataset = "hsapiens_snp")
+
+getBM(attributes = c("refsnp_id", "allele"),
+      filters = c("chr_name", "chrom_start", "chrom_end"),
+      values = list(transcript_data$chromosome_name,
+                 transcript_data$transcript_start,
+                 transcript_data$transcript_start + 1000),
+      mart = snpmart)
+```
+
+```
+##             refsnp_id allele
+## 1         rs188632953    C/T
+## 2         rs193274054    G/T
+## 3          rs11392309    -/A
+## 4  TMP_ESP_X_99839973    A/G
+## 5         rs201621778    G/T
+## 6         rs202136339    A/T
+## 7  TMP_ESP_X_99840019    G/A
+## 8          rs36082211    T/C
+## 9         rs199869003    T/C
+## 10 TMP_ESP_X_99840078    -/T
+## 11        rs200406916    A/G
+## 12          rs1540914    C/T
+## 13        rs187400193    G/A
+## 14        rs141371868    A/G
+## 15        rs143393007    A/G
+## 16 TMP_ESP_X_99840344    G/A
+## 17         rs56242689    G/C
+## 18         rs34045129    -/A
+## 19          rs5903164    -/A
+## 20        rs184143287    A/G
+```
+
+
+**Exercise:**
+
+Modify the last query so that it also returns the chromosome, the location on
+the chromosome, and the minor allele frequency.
+
+Hint: Remember you can learn the valid attribute names using
+`listAttributes(snpmart)`.
+
+
+```r
+# Your code here
+
+```
+
+
+### Installing from CRAN repository
+
+Installation from [CRAN][] is even easier than from [Bioconductor][]. It only
+requires one command, `install.packages`.
+
+**knitr**
+
+The [knitr][] package enables the creation of html documents like we have used
+for this boot camp. They are great for organizing and presenting your anayses
+and are easy to update when you obtain new data or modify the analysis.
+
+
+```r
+install.packages("knitr")
+```
+
+
+You can render and R Markdown file using RStudio's "Knit HTML" button or
+running the following command:
+
+
+```r
+knit2html("name_of_file.Rmd")
+```
+
+
+**assertive**
+
+The [assertive][] package is useful for ensuring your code is working as you
+expect.
+
+
+```r
+install.packages("assertive")
+```
+
+
+For example, if you knew that you were going to perform a log transformation,
+you would want to ensure that all the numbers were greater than zero.
+
+
+```r
+library(assertive)
+good_data <- c(3, 7, 1, 8, 4)
+bad_data <- c(8, 6, -3, 0, 5)
+assert_all_are_positive(good_data)
+assert_all_are_positive(bad_data)
+```
+
+```
+## Error: bad_data contains non-positive values.
+```
+
+
+**More advanced data analysis tools**
+
+If you start using R a lot, you will want to consider learning to use some of
+the packages created by [Hadley Wickham][hadley], a professor at Rice University
+and Chief Scientist at RStudio, Inc. Below are some packages to install that
+help with data manipulation and graphing.
+
+
+```r
+install.packages(c("plyr", "reshape2", "ggplot2", "stringr"))
+```
+
+
+[knitr]: http://yihui.name/knitr/
+[assertive]: http://cran.r-project.org/web/packages/assertive/
+[hadley]: http://had.co.nz/
+
+## Finding functions and packages
+
+There are many ways to search for existing functions and packages in order to
+prevent you from reinventing the wheel. One way is to search the R help pages.
+For example, you want to peform a t-test, but don't know what the command is.
+To search, run the command `??"t-test"`  Note that the quotations are only
+required in this case because of the hyphen.
+
+The identical result can be obtained by searching for the term in RStudio's
+help window.
+
+Searching the internet can be difficult since the name of the language is only
+one letter long. One site that helps with this is [rseek][], which specifically
+searches R related materials.
+
+A site for help with any programming language is [StackOverflow][so]. Use the
+tag "[r]" to limit your search to posts about R.
+
+But of course a normal internet search can also be useful. For example, if you
+search "bioconductor rpkm", you will find that there is already an rpkm
+function available in the package [easyRNASeq][]. In cases like this, you would
+have to determine whether it is easier to learn the workflow of the package or
+create your own function. For calculating RPKM, it is much easier to just do
+it yourself. But for more complicated statistical functions, it is well worth
+the effort to learn a new package. As an example, there are many bioconductor
+packages available that make it much easier to analyze [microarrays][] from
+many different platforms and will save you lots of time in the long run.
+
+[rseek]: http://www.rseek.org
+[so]: http://stackoverflow.com/
+[easyrnaseq]: http://www.bioconductor.org/packages/release/bioc/html/easyRNASeq.html
+[microarrays]: http://www.bioconductor.org/help/workflows/oligo-arrays/
