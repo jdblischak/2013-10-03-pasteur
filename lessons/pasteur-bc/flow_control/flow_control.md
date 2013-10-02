@@ -26,15 +26,21 @@ if (x >= 5) {
 
 
 #### We could also have a situation where we want an action to be executed while a condition is being matched:
-```{r}matrix
-x   <-  0
-vec <-  vector()
-while(x < 10) {
+
+```r
+x <- 0
+vec <- vector()
+while (x < 10) {
     vec <- c(vec, x^2)
-    x   <- x+1
+    x <- x + 1
 }
 vec
 ```
+
+```
+##  [1]  0  1  4  9 16 25 36 49 64 81
+```
+
 
 #### Now, and this is very important. When R evaluates the condition inside if and while statements, it is looking for a logical element, i.e., TRUE or FALSE. For example:
 
@@ -73,7 +79,7 @@ for (vegetable in seq_along(salad)) {
 ```
 
 
-#### Notice that at each loop, the index `vegetable` takes a valu following the sequence of the vector salad. During the first loop, vegetable, in this particular case, is going to be 1, then 2, and finally 3. 
+#### Notice that at each loop, the index `vegetable` takes a value following the sequence of the vector salad. During the first loop, vegetable, in this particular case, is going to be 1, then 2, and finally 3. 
 
 ```r
 for (index in 1:3) {
@@ -159,7 +165,7 @@ for (i in 1:nrow(mat)) {
 
 ## Exercise
 ### Step 1: create a matrix called `mat.ex` with 3 rows and 10 columns using `set.seed(20); rpois(30, lambda=12)` as values;
-### Step 2: create an empty numeric vector called `means` with length == ncol(mat.ex)
+### Step 2: create an empty numeric vector called `means` with length = ncol(mat.ex)
 ### Step 3: loop through the columns of `mat.ex` and calculate the respective mean values of each column;
 ### Step 4: if the mean calculated value is greater than 11, store it in `means`;
 ### Step 5: print vector `means` without zeros
