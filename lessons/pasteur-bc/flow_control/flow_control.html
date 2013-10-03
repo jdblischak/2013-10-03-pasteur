@@ -180,7 +180,7 @@ hljs.initHighlightingOnLoad();
 <body>
 <h1>Control Flow in R</h1>
 
-<h4>Often when we&#39;re coding we want to control the flow of our actions. That can be done by setting things to happen only if a condition or a set of conditions are met. Alternatively, we can also set an action to be computed for a particular number of times. There are many ways these can be achieved in R. For conditional statements, the most commonly used approaches are the constructs:</h4>
+<h4>Often when we&#39;re coding we want to control the flow of our actions. Control flow is simply the order in which we code and have our statements evaluated. That can be done by setting things to happen only if a condition or a set of conditions are met. Alternatively, we can also set an action to be computed for a particular number of times. There are many ways these can be achieved in R. For conditional statements, the most commonly used approaches are the constructs:</h4>
 
 <pre><code class="r">if (and else)
 while
@@ -239,7 +239,7 @@ mat &lt;- matrix(sample(c(NA, 1:10), 50, replace = TRUE), 5, 10)
 mat &lt;- ifelse(is.na(mat), 0, 1)
 </code></pre>
 
-<h4>In the first example, ifelse looks for all the conditions there are TRUE in the statement <code>mat &lt; 5</code> and replace them by the condition, otherwise does the altervative action. In this case, I told R to keep the original <code>mat</code> values where the condition did not occur. Similarly, in the second example, I told R to replace all existing numbers with 1 and replace missing values with 0. <em>VERY IMPORTANT</em>: ifelse can be very handy, but for heavy and repetitive tasks, it is considerably slower than regular <code>if</code> and <code>else</code> statements.</h4>
+<h4>In the first example, ifelse looks for all the conditions there are TRUE in the statement <code>mat &lt; 5</code> and replaces them by the first action (transform in 0), otherwise does the altervative action (keep originals). In this case, I told R to keep the original <code>mat</code> values where the condition did not occur. Similarly, in the second example, I told R to replace all existing numbers with 1 and replace missing values with 0. <em>VERY IMPORTANT</em>: ifelse can be very handy, but for heavy and repetitive tasks, it is considerably slower than regular <code>if</code> and <code>else</code> statements.</h4>
 
 <h4>As above, another way of controlling the flow of actions is to set them to occur for a specific number of times. We achieve that using the command <code>for</code></h4>
 
@@ -378,7 +378,241 @@ x &lt;- matrix(rpois(500, lambda = 25), 20, 25)
 a &lt;- colMeans(x)  #or colSums or rowMeans or rowSums
 </code></pre>
 
+<h4>We can also easily create tables using the function <code>tapply</code> from this same family.</h4>
+
+<pre><code class="r">set.seed(10)
+dat &lt;- data.frame(genes = rep(paste0(&quot;gene_&quot;, 1:3), each = 5), species = rep(paste0(&quot;species_&quot;, 
+    1:5), 3), gc_content = runif(15), stringsAsFactors = FALSE)
+dat &lt;- dat[-nrow(dat), ]
+dat
+</code></pre>
+
+<pre><code>##     genes   species gc_content
+## 1  gene_1 species_1    0.50748
+## 2  gene_1 species_2    0.30677
+## 3  gene_1 species_3    0.42691
+## 4  gene_1 species_4    0.69310
+## 5  gene_1 species_5    0.08514
+## 6  gene_2 species_1    0.22544
+## 7  gene_2 species_2    0.27453
+## 8  gene_2 species_3    0.27231
+## 9  gene_2 species_4    0.61583
+## 10 gene_2 species_5    0.42967
+## 11 gene_3 species_1    0.65166
+## 12 gene_3 species_2    0.56774
+## 13 gene_3 species_3    0.11351
+## 14 gene_3 species_4    0.59593
+</code></pre>
+
+<h4>Suppose we want to know what the mean gc content per gene is:</h4>
+
+<pre><code class="r">tapply(dat$gc_content, dat$genes, mean)
+</code></pre>
+
+<pre><code>## gene_1 gene_2 gene_3 
+## 0.4039 0.3636 0.4822
+</code></pre>
+
+<h4>Sometimes, you may also have a very big and messy dataset and you want to obtain a table that makes things clearer to see. Say we want, for example, the gc_content of species (rows) X genes (columns).</h4>
+
+<pre><code class="r">tapply(dat$gc_content, list(dat$species, dat$genes), sum)
+</code></pre>
+
+<pre><code>##            gene_1 gene_2 gene_3
+## species_1 0.50748 0.2254 0.6517
+## species_2 0.30677 0.2745 0.5677
+## species_3 0.42691 0.2723 0.1135
+## species_4 0.69310 0.6158 0.5959
+## species_5 0.08514 0.4297     NA
+</code></pre>
+
+<h4>It is very important to notice that the last value is a NA, simply because the species 5 did not have gene 3, and therefore no gc content. fortunately, we already know how to get rid of NAs in tables if we want to.</h4>
+
+<pre><code class="r">tab &lt;- tapply(dat$gc_content, list(dat$species, dat$genes), sum)
+tab &lt;- ifelse(is.na(tab), 0, tab)  #try also tab[is.na(tab)]  &lt;-  0
+</code></pre>
+
 <h4>Finally, you can customize your own functions and tomorrow John is going to teach you how to embed your customized functions inside <code>apply</code> calls.</h4>
+
+<h1>Dealing with lists</h1>
+
+<h4>R offers a very powerful class of objects called lists. A list can virtually contain anything. You can have many data.frames inside a list, or you can mix a vector, a data.frame, any other type of array, other lists, and so on. Example:</h4>
+
+<pre><code class="r">set.seed(10)
+our_list &lt;- list(runif(10), matrix(1:10, 2, 5), data.frame(letters = letters, 
+    order = 1:26))
+class(our_list)
+</code></pre>
+
+<pre><code>## [1] &quot;list&quot;
+</code></pre>
+
+<pre><code class="r">str(our_list)
+</code></pre>
+
+<pre><code>## List of 3
+##  $ : num [1:10] 0.5075 0.3068 0.4269 0.6931 0.0851 ...
+##  $ : int [1:2, 1:5] 1 2 3 4 5 6 7 8 9 10
+##  $ :&#39;data.frame&#39;:    26 obs. of  2 variables:
+##   ..$ letters: Factor w/ 26 levels &quot;a&quot;,&quot;b&quot;,&quot;c&quot;,&quot;d&quot;,..: 1 2 3 4 5 6 7 8 9 10 ...
+##   ..$ order  : int [1:26] 1 2 3 4 5 6 7 8 9 10 ...
+</code></pre>
+
+<pre><code class="r">dim(our_list)  #lists do not have dimensions as arrays, thay are measured by their number of elements
+</code></pre>
+
+<pre><code>## NULL
+</code></pre>
+
+<pre><code class="r">length(our_list)
+</code></pre>
+
+<pre><code>## [1] 3
+</code></pre>
+
+<pre><code class="r">names(our_list)  #create names for our list
+</code></pre>
+
+<pre><code>## NULL
+</code></pre>
+
+<pre><code class="r">names(our_list) &lt;- c(&quot;random_numbers&quot;, &quot;a_matrix&quot;, &quot;a_dataframe&quot;)
+our_list
+</code></pre>
+
+<pre><code>## $random_numbers
+##  [1] 0.50748 0.30677 0.42691 0.69310 0.08514 0.22544 0.27453 0.27231
+##  [9] 0.61583 0.42967
+## 
+## $a_matrix
+##      [,1] [,2] [,3] [,4] [,5]
+## [1,]    1    3    5    7    9
+## [2,]    2    4    6    8   10
+## 
+## $a_dataframe
+##    letters order
+## 1        a     1
+## 2        b     2
+## 3        c     3
+## 4        d     4
+## 5        e     5
+## 6        f     6
+## 7        g     7
+## 8        h     8
+## 9        i     9
+## 10       j    10
+## 11       k    11
+## 12       l    12
+## 13       m    13
+## 14       n    14
+## 15       o    15
+## 16       p    16
+## 17       q    17
+## 18       r    18
+## 19       s    19
+## 20       t    20
+## 21       u    21
+## 22       v    22
+## 23       w    23
+## 24       x    24
+## 25       y    25
+## 26       z    26
+</code></pre>
+
+<h4>If we want to extract an element from a list, we use double squared brackets [[]].</h4>
+
+<pre><code class="r">our_list[[1]]
+</code></pre>
+
+<pre><code>##  [1] 0.50748 0.30677 0.42691 0.69310 0.08514 0.22544 0.27453 0.27231
+##  [9] 0.61583 0.42967
+</code></pre>
+
+<pre><code class="r">our_list[[&quot;a_matrix&quot;]]
+</code></pre>
+
+<pre><code>##      [,1] [,2] [,3] [,4] [,5]
+## [1,]    1    3    5    7    9
+## [2,]    2    4    6    8   10
+</code></pre>
+
+<pre><code class="r">class(our_list[[1]])
+</code></pre>
+
+<pre><code>## [1] &quot;numeric&quot;
+</code></pre>
+
+<pre><code class="r">dim(our_list[[2]])
+</code></pre>
+
+<pre><code>## [1] 2 5
+</code></pre>
+
+<h4>Now that we understand the basics of a list, we can use use the function <code>lapply</code> from the <code>apply</code> family, which is a very powerful tool to loop over vectors and lists. Exmaple:</h4>
+
+<pre><code class="r">list_gcs &lt;- list(gene_a = runif(3), gene_b = runif(3), gene_c = runif(3))
+means &lt;- lapply(list_gcs, mean)
+class(means)
+</code></pre>
+
+<pre><code>## [1] &quot;list&quot;
+</code></pre>
+
+<pre><code class="r">names(means)
+</code></pre>
+
+<pre><code>## [1] &quot;gene_a&quot; &quot;gene_b&quot; &quot;gene_c&quot;
+</code></pre>
+
+<pre><code class="r">means[[1]]  #or means[[&#39;gene_a&#39;]], for example
+</code></pre>
+
+<pre><code>## [1] 0.4443
+</code></pre>
+
+<pre><code class="r">means
+</code></pre>
+
+<pre><code>## $gene_a
+## [1] 0.4443
+## 
+## $gene_b
+## [1] 0.4609
+## 
+## $gene_c
+## [1] 0.2383
+</code></pre>
+
+<h4>Using <code>our_list</code>, we can also use lapply to quickly explore the classes of our different objects within it.</h4>
+
+<pre><code class="r">lapply(our_list, class)
+</code></pre>
+
+<pre><code>## $random_numbers
+## [1] &quot;numeric&quot;
+## 
+## $a_matrix
+## [1] &quot;matrix&quot;
+## 
+## $a_dataframe
+## [1] &quot;data.frame&quot;
+</code></pre>
+
+<h3>Notice that lapply returns a list as its default behavior. R offers a second function that simplifies the output whenever possible. It&#39;s called <code>sapply</code>, which stands for simplify <code>lapply</code>. If your input is a mtrix, the output will also be coerced into a matrix, if your input is a vector, R will try to coerce the output into a vector as well.</h3>
+
+<pre><code class="r">sap &lt;- sapply(our_list, class)
+sap
+</code></pre>
+
+<pre><code>## random_numbers       a_matrix    a_dataframe 
+##      &quot;numeric&quot;       &quot;matrix&quot;   &quot;data.frame&quot;
+</code></pre>
+
+<pre><code class="r">class(sap)
+</code></pre>
+
+<pre><code>## [1] &quot;character&quot;
+</code></pre>
 
 </body>
 

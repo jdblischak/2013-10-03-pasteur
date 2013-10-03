@@ -1,7 +1,7 @@
 Control Flow in R
 ==================
     
-#### Often when we're coding we want to control the flow of our actions. That can be done by setting things to happen only if a condition or a set of conditions are met. Alternatively, we can also set an action to be computed for a particular number of times. There are many ways these can be achieved in R. For conditional statements, the most commonly used approaches are the constructs: 
+#### Often when we're coding we want to control the flow of our actions. Control flow is simply the order in which we code and have our statements evaluated. That can be done by setting things to happen only if a condition or a set of conditions are met. Alternatively, we can also set an action to be computed for a particular number of times. There are many ways these can be achieved in R. For conditional statements, the most commonly used approaches are the constructs: 
 ```{r eval=FALSE} 
 if (and else)
 while
@@ -51,7 +51,7 @@ mat  <-  matrix(sample(c(NA, 1:10),50,replace=TRUE), 5, 10)
 mat  <-  ifelse(is.na(mat), 0, 1)
 ```
 
-#### In the first example, ifelse looks for all the conditions there are TRUE in the statement `mat < 5` and replace them by the condition, otherwise does the altervative action. In this case, I told R to keep the original `mat` values where the condition did not occur. Similarly, in the second example, I told R to replace all existing numbers with 1 and replace missing values with 0. *VERY IMPORTANT*: ifelse can be very handy, but for heavy and repetitive tasks, it is considerably slower than regular `if` and `else` statements. 
+#### In the first example, ifelse looks for all the conditions there are TRUE in the statement `mat < 5` and replaces them by the first action (transform in 0), otherwise does the altervative action (keep originals). In this case, I told R to keep the original `mat` values where the condition did not occur. Similarly, in the second example, I told R to replace all existing numbers with 1 and replace missing values with 0. *VERY IMPORTANT*: ifelse can be very handy, but for heavy and repetitive tasks, it is considerably slower than regular `if` and `else` statements. 
 
 #### As above, another way of controlling the flow of actions is to set them to occur for a specific number of times. We achieve that using the command `for`
 ```{r}
@@ -142,4 +142,73 @@ x  <-  matrix(rpois(500, lambda=25), 20, 25)
 a  <-  colMeans(x) #or colSums or rowMeans or rowSums
 ```
 
+#### We can also easily create tables using the function `tapply` from this same family. 
+```{r}
+set.seed(10)
+dat  <-  data.frame(genes=rep(paste0('gene_', 1:3), each=5), species=rep(paste0('species_', 1:5), 3), gc_content=runif(15), stringsAsFactors=FALSE)
+dat  <-  dat[-nrow(dat),]
+dat
+```
+
+#### Suppose we want to know what the mean gc content per gene is:
+```{r}
+tapply(dat$gc_content, dat$genes, mean)
+```
+
+#### Sometimes, you may also have a very big and messy dataset and you want to obtain a table that makes things clearer to see. Say we want, for example, the gc_content of species (rows) X genes (columns). 
+```{r}
+tapply(dat$gc_content, list(dat$species, dat$genes), sum)
+```
+
+#### It is very important to notice that the last value is a NA, simply because the species 5 did not have gene 3, and therefore no gc content. fortunately, we already know how to get rid of NAs in tables if we want to.
+```{r}
+tab  <-  tapply(dat$gc_content, list(dat$species, dat$genes), sum)
+tab  <-  ifelse(is.na(tab), 0, tab) #try also tab[is.na(tab)]  <-  0
+```
+
 #### Finally, you can customize your own functions and tomorrow John is going to teach you how to embed your customized functions inside `apply` calls. 
+
+# Dealing with lists
+#### R offers a very powerful class of objects called lists. A list can virtually contain anything. You can have many data.frames inside a list, or you can mix a vector, a data.frame, any other type of array, other lists, and so on. Example:
+```{r}
+set.seed(10)
+our_list  <-  list(runif(10), matrix(1:10,2,5), data.frame(letters=letters, order=1:26))
+class(our_list)
+str(our_list)
+dim(our_list) #lists do not have dimensions as arrays, thay are measured by their number of elements
+length(our_list)
+names(our_list) #create names for our list
+names(our_list)  <-  c('random_numbers', 'a_matrix', 'a_dataframe')
+our_list
+```
+
+#### If we want to extract an element from a list, we use double squared brackets [[]]. 
+
+```{r}
+our_list[[1]]
+our_list[['a_matrix']]
+class(our_list[[1]])
+dim(our_list[[2]])
+```
+
+#### Now that we understand the basics of a list, we can use use the function `lapply` from the `apply` family, which is a very powerful tool to loop over vectors and lists. Exmaple:
+```{r}
+list_gcs <- list(gene_a=runif(3), gene_b=runif(3), gene_c=runif(3))
+means    <-  lapply(list_gcs, mean)
+class(means)
+names(means)
+means[[1]] #or means[['gene_a']], for example
+means
+```
+
+#### Using `our_list`, we can also use lapply to quickly explore the classes of our different objects within it.
+```{r}
+lapply(our_list, class)
+```
+
+### Notice that lapply returns a list as its default behavior. R offers a second function that simplifies the output whenever possible. It's called `sapply`, which stands for simplify `lapply`. If your input is a mtrix, the output will also be coerced into a matrix, if your input is a vector, R will try to coerce the output into a vector as well.
+```{r}
+sap  <-  sapply(our_list, class)
+sap
+class(sap)
+```
