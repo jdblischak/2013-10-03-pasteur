@@ -228,6 +228,19 @@ vec
 <pre><code>## [1] FALSE
 </code></pre>
 
+<h4>R also offers a built-in function that is more intuitive to evaluate conditions.</h4>
+
+<pre><code class="r">mat &lt;- matrix(0:19, 5, 4)
+mat &lt;- ifelse(mat &lt; 5, 0, mat)
+
+# OR
+
+mat &lt;- matrix(sample(c(NA, 1:10), 50, replace = TRUE), 5, 10)
+mat &lt;- ifelse(is.na(mat), 0, 1)
+</code></pre>
+
+<h4>In the first example, ifelse looks for all the conditions there are TRUE in the statement <code>mat &lt; 5</code> and replace them by the condition, otherwise does the altervative action. In this case, I told R to keep the original <code>mat</code> values where the condition did not occur. Similarly, in the second example, I told R to replace all existing numbers with 1 and replace missing values with 0. <em>VERY IMPORTANT</em>: ifelse can be very handy, but for heavy and repetitive tasks, it is considerably slower than regular <code>if</code> and <code>else</code> statements.</h4>
+
 <h4>As above, another way of controlling the flow of actions is to set them to occur for a specific number of times. We achieve that using the command <code>for</code></h4>
 
 <pre><code class="r">salad &lt;- c(&quot;lettuce&quot;, &quot;carrots&quot;, &quot;tomatos&quot;)
@@ -358,26 +371,12 @@ x &lt;- matrix(rpois(500, lambda = 25), 20, 25)
 a &lt;- apply(x, 2, mean)
 </code></pre>
 
-<h4><code>a</code> takes the same values as in the example before, but with much less code (3 lines) which is also simpler. In this case, <code>apply</code> evaluates the object <code>x</code> and then apply the function <code>mean</code> to its 2nd dimension, i.e., columns. By default, <code>apply</code> uses the dimension 1(=rows) for it&#39;s evaluations, such that if you type <code>apply(x, mean)</code>, it calculates the row means. There are even more convinientand faster ways to calculate sum or mean of dimensions in a matrix or data.frame.</h4>
+<h4><code>a</code> takes the same values as in the example before, but with much less code (3 lines) which is also simpler. In this case, <code>apply</code> evaluates the object <code>x</code> and then apply the function <code>mean</code> to its 2nd dimension, i.e., columns - dimension=1 would imply rows. <code>apply</code> assumes no margin for dimension for it&#39;s evaluations, so you always have to provide it. There are even more convinient and faster ways to calculate sum or mean of dimensions in a matrix or data.frame.</h4>
 
 <pre><code class="r">set.seed(10)
 x &lt;- matrix(rpois(500, lambda = 25), 20, 25)
-a &lt;- colMeans(x)
-</code></pre>
-
-<h4>Now, what if our <code>x</code> matrix contained <code>NA</code> values?</h4>
-
-<pre><code class="r">set.seed(10)
-x &lt;- matrix(rpois(500, lambda = 25), 20, 25)
-x[10, ] &lt;- NA
 a &lt;- colMeans(x)  #or colSums or rowMeans or rowSums
-head(a)
 </code></pre>
-
-<pre><code>## [1] NA NA NA NA NA NA
-</code></pre>
-
-<h4>That happened because these functions have a argument <code>rm.na</code> set to <code>FALSE</code> as default. If you want to explictly ignore NA values in your rows or columns, simply add <code>na.rm=TRUE</code> when calling, e.g., <code>colSums(x, na.rm=TRUE)</code>.</h4>
 
 <h4>Finally, you can customize your own functions and tomorrow John is going to teach you how to embed your customized functions inside <code>apply</code> calls.</h4>
 

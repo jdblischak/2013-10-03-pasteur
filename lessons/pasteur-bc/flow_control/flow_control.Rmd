@@ -40,6 +40,19 @@ if(4 == 3){
 4==3
 ```
 
+#### R also offers a built-in function that is more intuitive to evaluate conditions.
+```{r}
+mat  <-  matrix(0:19,5,4)
+mat  <-  ifelse(mat < 5, 0, mat)
+
+#OR
+
+mat  <-  matrix(sample(c(NA, 1:10),50,replace=TRUE), 5, 10)
+mat  <-  ifelse(is.na(mat), 0, 1)
+```
+
+#### In the first example, ifelse looks for all the conditions there are TRUE in the statement `mat < 5` and replace them by the condition, otherwise does the altervative action. In this case, I told R to keep the original `mat` values where the condition did not occur. Similarly, in the second example, I told R to replace all existing numbers with 1 and replace missing values with 0. *VERY IMPORTANT*: ifelse can be very handy, but for heavy and repetitive tasks, it is considerably slower than regular `if` and `else` statements. 
+
 #### As above, another way of controlling the flow of actions is to set them to occur for a specific number of times. We achieve that using the command `for`
 ```{r}
 salad    <-  c('lettuce', 'carrots', 'tomatos')
@@ -66,7 +79,6 @@ for (i in 1:nrow(mat)) {
     }
 }
 ```
-
 
 #### At this point you may be wondering if we can mix the different approaches and the answer is yes. For a certain `for` loop, you may want to compute your action only if a condition is matched.
 ```{r}
@@ -123,22 +135,11 @@ x  <-  matrix(rpois(500, lambda=25), 20, 25)
 a  <-  apply(x, 2, mean)
 ```
 
-#### `a` takes the same values as in the example before, but with much less code (3 lines) which is also simpler. In this case, `apply` evaluates the object `x` and then apply the function `mean` to its 2nd dimension, i.e., columns. By default, `apply` uses the dimension 1(=rows) for it's evaluations, such that if you type `apply(x, mean)`, it calculates the row means. There are even more convinientand faster ways to calculate sum or mean of dimensions in a matrix or data.frame.
+#### `a` takes the same values as in the example before, but with much less code (3 lines) which is also simpler. In this case, `apply` evaluates the object `x` and then apply the function `mean` to its 2nd dimension, i.e., columns - dimension=1 would imply rows. `apply` assumes no margin for dimension for it's evaluations, so you always have to provide it. There are even more convinient and faster ways to calculate sum or mean of dimensions in a matrix or data.frame.
 ```{r}
 set.seed(10)
 x  <-  matrix(rpois(500, lambda=25), 20, 25)
-a  <-  colMeans(x)
+a  <-  colMeans(x) #or colSums or rowMeans or rowSums
 ```
-
-#### Now, what if our `x` matrix contained `NA` values?
-```{r}
-set.seed(10)
-x       <-  matrix(rpois(500, lambda=25), 20, 25)
-x[10,]  <-  NA
-a       <-  colMeans(x) #or colSums or rowMeans or rowSums
-head(a)
-```
-
-#### That happened because these functions have a argument `rm.na` set to `FALSE` as default. If you want to explictly ignore NA values in your rows or columns, simply add `na.rm=TRUE` when calling, e.g., `colSums(x, na.rm=TRUE)`.
 
 #### Finally, you can customize your own functions and tomorrow John is going to teach you how to embed your customized functions inside `apply` calls. 
